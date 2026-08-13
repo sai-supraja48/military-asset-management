@@ -21,28 +21,22 @@ dotenv.config();
 
 const app = express();
 
-/* =========================================================
+/* ================================
    SECURITY
-========================================================= */
+================================ */
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false
-  })
-);
+app.use(helmet());
 
-/* =========================================================
-   CORS CONFIGURATION
-========================================================= */
+/* ================================
+   CORS
+================================ */
 
-// Production frontend URL
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://military-asset-management-frontend-app.onrender.com'
 ];
 
-// Add URLs from Render environment variable
 if (process.env.CLIENT_URL) {
   process.env.CLIENT_URL
     .split(',')
@@ -55,14 +49,12 @@ if (process.env.CLIENT_URL) {
     });
 }
 
-console.log('Allowed CORS origins:');
-console.log(allowedOrigins);
+console.log('Allowed CORS origins:', allowedOrigins);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without Origin header
-      // Example: Postman, Thunder Client, server-to-server
+      // Allow Postman / server-to-server requests
       if (!origin) {
         return callback(null, true);
       }
@@ -71,11 +63,9 @@ app.use(
         return callback(null, true);
       }
 
-      console.log(`CORS blocked origin: ${origin}`);
+      console.log('Blocked CORS origin:', origin);
 
-      return callback(
-        new Error(`CORS: Origin ${origin} is not allowed`)
-      );
+      return callback(null, false);
     },
 
     credentials: true,
@@ -92,32 +82,20 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization'
-    ],
-
-    optionsSuccessStatus: 204
+    ]
   })
 );
 
-/* =========================================================
+/* ================================
    BODY PARSING
-========================================================= */
+================================ */
 
-app.use(
-  express.json({
-    limit: '1mb'
-  })
-);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: '1mb'
-  })
-);
-
-/* =========================================================
+/* ================================
    HEALTH CHECK
-========================================================= */
+================================ */
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -128,9 +106,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-/* =========================================================
+/* ================================
    API ROUTES
-========================================================= */
+================================ */
 
 app.use('/api/auth', authRoutes);
 
@@ -148,30 +126,28 @@ app.use('/api/expenditures', expenditureRoutes);
 
 app.use('/api/audit-logs', auditRoutes);
 
-/* =========================================================
-   404 HANDLER
-========================================================= */
+/* ================================
+   404
+================================ */
 
 app.use(notFound);
 
-/* =========================================================
-   GLOBAL ERROR HANDLER
-========================================================= */
+/* ================================
+   ERROR HANDLER
+================================ */
 
 app.use(errorHandler);
 
-/* =========================================================
-   START SERVER
-========================================================= */
+/* ================================
+   SERVER
+================================ */
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log('======================================');
   console.log('Military Asset Management API');
   console.log(`API running on port ${PORT}`);
-  console.log(
-    `Environment: ${process.env.NODE_ENV || 'development'}`
-  );
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log('======================================');
 });
