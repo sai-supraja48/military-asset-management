@@ -25,19 +25,24 @@ const app = express();
    SECURITY
 ========================================================= */
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false
+  })
+);
 
 /* =========================================================
    CORS CONFIGURATION
 ========================================================= */
 
+// Production frontend URL
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://military-asset-management-frontend-892v.onrender.com'
+  'https://military-asset-management-frontend-app.onrender.com'
 ];
 
-// Add CLIENT_URL from environment if available
+// Add URLs from Render environment variable
 if (process.env.CLIENT_URL) {
   process.env.CLIENT_URL
     .split(',')
@@ -50,11 +55,14 @@ if (process.env.CLIENT_URL) {
     });
 }
 
+console.log('Allowed CORS origins:');
+console.log(allowedOrigins);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header
-      // (Postman, server-to-server requests, etc.)
+      // Allow requests without Origin header
+      // Example: Postman, Thunder Client, server-to-server
       if (!origin) {
         return callback(null, true);
       }
@@ -66,7 +74,7 @@ app.use(
       console.log(`CORS blocked origin: ${origin}`);
 
       return callback(
-        new Error(`Origin ${origin} is not allowed by CORS`)
+        new Error(`CORS: Origin ${origin} is not allowed`)
       );
     },
 
@@ -84,7 +92,9 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization'
-    ]
+    ],
+
+    optionsSuccessStatus: 204
   })
 );
 
@@ -92,8 +102,18 @@ app.use(
    BODY PARSING
 ========================================================= */
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.json({
+    limit: '1mb'
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '1mb'
+  })
+);
 
 /* =========================================================
    HEALTH CHECK
@@ -146,10 +166,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('======================================');
   console.log('Military Asset Management API');
   console.log(`API running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(
+    `Environment: ${process.env.NODE_ENV || 'development'}`
+  );
   console.log('======================================');
 });
